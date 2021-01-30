@@ -20,16 +20,15 @@ func main() {
 		println("can't read files in folder %s: %w\n", dirname, err)
 	}
 
-	// Parse each file as a LogSet
+	// Create an empty LogSet
 	alllogs := LogSet{}
+
+	// Import each file in the logset
 	for _, file := range files {
 		filename := dirname + "/" + file.Name()
-		data, err := readLogFile(filename)
+		err := alllogs.ImportFile(filename)
 		if err != nil {
 			println("can't parse file %s: %w\n", filename, err)
-		}
-		for _, d := range data {
-			alllogs = append(alllogs, d)
 		}
 	}
 
@@ -43,4 +42,7 @@ func main() {
 	generateOutputs()
 
 	os.Stdout.Write(jsonLogs)
+
+	jsonTags, _ := json.Marshal(alllogs.Tags())
+	os.Stdout.Write(jsonTags)
 }
