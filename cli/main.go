@@ -17,17 +17,16 @@ type LogEvent struct {
 	Text     string    `json:"text,omitempty"`
 }
 
-type LogSet []LogEvent
-
 // parseLog reads a log formated string and returns a LogEvent
 func parseLog(line string) (LogEvent, error) {
 	// Parse content
+	// Log syntax is:
+	//  YYYY-MM-DD   <dur>H  <tag>  <text>
 	re := regexp.MustCompile(`^(\d{4}-[0-1]\d-[0-3]\d) +(\d+)H +([.a-z]+)(?:$| +(.*))`)
 	content := re.FindStringSubmatch(line)
-
-	// for i, val := range content {
-	//   fmt.Printf("value %d: %s\n", i, val)
-	// }
+	if len(content) != 5 {
+		return LogEvent{}, fmt.Errorf("Can't parse line with regexp %s", line)
+	}
 
 	// Read parsed values
 	date, err := time.Parse("2006-01-02", content[1])
@@ -51,7 +50,7 @@ func parseLog(line string) (LogEvent, error) {
 }
 
 // readLogFile reads fpath and creates a LogSet parsing every line
-func readLogFile(fpath string) (LogSet, error) {
+func readLogFile(fpath string) ([]LogEvent, error) {
 	// Read file
 	fmt.Errorf("Opening file %s\n", fpath)
 	f, err := os.Open(fpath)
@@ -62,7 +61,7 @@ func readLogFile(fpath string) (LogSet, error) {
 	scanner := bufio.NewScanner(f)
 
 	// Parse each line of the file
-	logset := LogSet{}
+	var logset []LogEvent
 	for scanner.Scan() {
 		log, err := parseLog(scanner.Text())
 		if err != nil {
@@ -75,17 +74,37 @@ func readLogFile(fpath string) (LogSet, error) {
 }
 
 func main() {
-	// Read data files
-	file := "data/2021w04"
-	data, err := readLogFile(file)
+	// Read data folder
+	dirname := "data"
+
+	d, err := os.Open(dirname)
+	defer d.Close()
 	if err != nil {
-		fmt.Errorf("Error with file %s: %w", file, err)
+		println("Can't open folder %s: %w\n", dirname, err)
+	}
+
+	files, err := d.Readdir(-1)
+	if err != nil {
+		println("Can't read files in folder %s: %w\n", dirname, err)
+	}
+
+	// Parse each file as []LogEvent
+	var alllogs []LogEvent
+	for _, file := range files {
+		filename := dirname + "/" + file.Name()
+		data, err := readLogFile(filename)
+		if err != nil {
+			println("Can't parse file %s: %w\n", filename, err)
+		}
+		for _, d := range data {
+			alllogs = append(alllogs, d)
+		}
 	}
 
 	// Marshal as json
-	jsondata, err := json.Marshal(data)
+	jsondata, err := json.Marshal(alllogs)
 	if err != nil {
-		fmt.Errorf("Can't output %s into JSON: %w", file, err)
+		println("Can't output %s into JSON: %w", alllogs, err)
 	}
 
 	// Output
