@@ -47,6 +47,6 @@ func main() {
 	os.Stdout.Write(jsonTags)
 
 	jsonSub, _ := json.Marshal(
-		alllogs.Filter(HasTag, []string{"research"}))
+		alllogs.Filter(HasDay, "2020-01-01"))
 	os.Stdout.Write(jsonSub)
 }

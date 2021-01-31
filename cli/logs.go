@@ -99,53 +99,51 @@ func (l *LogSet) Tags() []string {
 // Each log is tested against the function passed in parameters. If the result
 // of the function is true, the log is added to the output
 // TODO: use interface
-func (l *LogSet) Filter(test func(*Log, []string) bool, args []string) LogSet {
+func (l *LogSet) Filter(test func(*Log, ...interface{}) bool, args ...interface{}) LogSet {
 	set := LogSet{}
 	for _, log := range *l {
-		if test(&log, args) {
+		if test(&log, args...) {
 			set = append(set, log)
 		}
 	}
 	return set
 }
 
-// HasTag returns true if the string passed as an arguments is equal to the
+// HasTag returns true if the string passed as an argument is equal to the
 // Log's tag.
-func HasTag(l *Log, tag []string) bool { return l.Tag == tag[0] }
+func HasTag(l *Log, tag ...interface{}) bool {
+	t := tag[0].(string)
+	return l.Tag == t
+}
 
 // HasDay returns true if the Log's date matches the date passed as argument.
 // The date format is YYYY-MM-DD
-func HasDay(l *Log, date []string) bool {
-	day, _ := time.Parse("2006-01-02", date[0])
+func HasDay(l *Log, date ...interface{}) bool {
+	day, _ := time.Parse("2006-01-02", date[0].(string))
 	return l.Date.Equal(day)
 }
 
 // HasWeek returns true if the Log's week matches the date passed as argument.
-// The week format is using two strings: year and week number between 1 and 53
-func HasWeek(l *Log, date []string) bool {
-	year, _ := strconv.Atoi(date[0])
-	week, _ := strconv.Atoi(date[1])
+// The week format is using two int: year and week number between 1 and 53
+func HasWeek(l *Log, date ...interface{}) bool {
 	dy, dw := l.Date.ISOWeek()
-	return dy == year && dw == week
+	return dy == date[0].(int) && dw == date[1].(int)
 }
 
 // HasMonth returns true if the Log's date match the date passed as argument.
 // The date format is YYYY-MM
-// FIXME: doesn't seem to work
-func HasMonth(l *Log, date []string) bool {
-	time, _ := time.Parse("2006-01", date[0])
+func HasMonth(l *Log, date ...interface{}) bool {
+	time, _ := time.Parse("2006-01", date[0].(string))
 	return l.Date.Month() == time.Month()
 }
 
 // HasYear returns true if the Log's date match the year passed as argument.
-// The date format is YYYY
-func HasYear(l *Log, date []string) bool {
-	year, _ := strconv.Atoi(date[0])
-	return l.Date.Year() == year
+func HasYear(l *Log, date ...interface{}) bool {
+	return l.Date.Year() == date[0].(int)
 }
 
-// Contains returns true if the text of a log contains the substring passed as
+// HasText returns true if the text of a log contains the substring passed as
 // an argument. This method is not case sensitive.
-func Contains(l *Log, text []string) bool {
-	return strings.Contains(l.Text, strings.ToLower(text[0]))
+func HasText(l *Log, text ...interface{}) bool {
+	return strings.Contains(l.Text, strings.ToLower(text[0].(string)))
 }
