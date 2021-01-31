@@ -10,10 +10,10 @@ func main() {
 	dirname := "data"
 
 	d, err := os.Open(dirname)
-	defer d.Close()
 	if err != nil {
 		println("can't open folder %s: %w\n", dirname, err)
 	}
+	defer d.Close()
 
 	files, err := d.Readdir(-1)
 	if err != nil {
@@ -45,4 +45,8 @@ func main() {
 
 	jsonTags, _ := json.Marshal(alllogs.Tags())
 	os.Stdout.Write(jsonTags)
+
+	jsonSub, _ := json.Marshal(
+		alllogs.Filter(HasTag, []string{"research"}))
+	os.Stdout.Write(jsonSub)
 }
